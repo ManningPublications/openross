@@ -57,7 +57,14 @@ class BobRossEndpoint(resource.Resource):
             if settings.DEBUG:
                 log.msg("Header Info: %s" % file_path, logLevel=logging.DEBUG)
             request.setHeader('X-Accel-Redirect', '/'+file_path)
-            request.setHeader('Content-Type', 'image/jpeg')
+
+            if '.jpeg' in request.path or '.jpg' in request.path:
+                request.setHeader('Content-Type', 'image/jpeg')
+            elif '.png' in request.path:
+                request.setHeader('Content-Type', 'image/png')
+            else:
+                request.setHeader('Content-Type', 'application/octet-stream')
+
             request.finish()
 
         def on_error(data):
@@ -124,11 +131,6 @@ class BobRossEndpoint(resource.Resource):
         if request.path == settings.HEALTH_CHECK_PATH:
             healthcheck(request, BobRossEndpoint.engine)
             return server.NOT_DONE_YET
-
-        # Ensure image is a jpeg that is being requested
-        if '.jpeg' not in request.path and '.jpg' not in request.path:
-            request.setResponseCode(403)
-            return ''
 
         d = self._process_image(image_path, width, height, mode, **request.args)
         d.addCallback(on_finish, request)
